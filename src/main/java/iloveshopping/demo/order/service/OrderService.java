@@ -9,6 +9,7 @@ import iloveshopping.demo.order.entity.OrderItem;
 import iloveshopping.demo.order.repository.OrderRepository;
 import iloveshopping.demo.user.entity.User;
 import iloveshopping.demo.catalog.repository.ProductRepository;
+import iloveshopping.demo.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final OrderMessageProducer messageProducer;
     private final ProductRepository productRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public OrderResponse checkout(User user, String guestSessionId, CheckoutRequest request) {
@@ -40,6 +42,7 @@ public class OrderService {
         Order order = new Order();
         order.setUser(user);
         order.setCustomerEmail(request.email());
+        order.setCustomerPhone(request.phone());
         order.setShippingAddress(String.format("%s, %s, %s", request.address(), request.city(), request.zipCode()));
         order.setShippingMethod(request.shippingOptionId());
         order.setStatus("PENDING_PAYMENT");
@@ -95,6 +98,7 @@ public class OrderService {
             order.setStatus("PAYMENT_FAILED");
         }
         orderRepository.save(order);
+        notificationService.sendPaymentUpdate(order, event.success());
     }
 
     @Transactional
@@ -130,6 +134,11 @@ public class OrderService {
                 .filter(order -> (status == null) || status.isBlank() || order.getStatus().equalsIgnoreCase(status))
                 .map(this::mapToOrderResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public OrderResponse getOrder(Long orderId, User user) {
+        return mapToOrderResponse(getOrderEntity(orderId, user));
     }
 
     private Order getOrderEntity(Long orderId, User user) {
@@ -170,6 +179,7 @@ public class OrderService {
                 order.getStatus(),
                 order.getTotalAmount(),
                 order.getCustomerEmail(),
+                order.getCustomerPhone(),
                 order.getShippingAddress(),
                 order.getShippingMethod(),
                 itemResponses,

@@ -29,7 +29,7 @@ class CheckoutFlowIntegrationTest {
     @DisplayName("Critical Flow: Guest Checkout validation")
     void guestCheckout_ValidationFailureOnEmptyFields() throws Exception {
         CheckoutRequest invalidRequest = new CheckoutRequest(
-                "", "", "", "", "", "", "", ""
+                "", "", "", "", "", "", "", "", ""
         );
 
         mockMvc.perform(post("/api/v1/orders/checkout")

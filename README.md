@@ -10,7 +10,7 @@ Docker is the only application prerequisite. Set a non-default `DATA_ENCRYPTION_
 docker compose up --build
 ```
 
-The API is at `http://localhost:8080`; RabbitMQ management is at `http://localhost:15672` (guest/guest). Stop the stack with `docker compose down`. Add `-v` only when intentionally deleting local database data.
+The storefront is at `http://localhost:3000`, the API is at `http://localhost:8080`, RabbitMQ management is at `http://localhost:15672` (guest/guest), and Mailpit's email inbox is at `http://localhost:8025`. Stop the stack with `docker compose down`. Add `-v` only when intentionally deleting local database data.
 
 For local development, provide PostgreSQL and RabbitMQ, then run `./mvnw test` or `./mvnw spring-boot:run`.
 
@@ -47,6 +47,10 @@ User (1) ── (*) Order ── (*) OrderItem ── snapshot of Product
 5. Signed-in customers can use `GET /api/v1/orders?status=&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD` and `POST /api/v1/orders/{id}/cancel`. Cancellation restores inventory; a paid cancellation is marked for refund workflow.
 
 Sandbox failure tokens are `tok_insufficient_funds`, `tok_invalid_card`, `tok_expired_card`, and `tok_gateway_timeout`. They intentionally exercise a failed payment without accepting raw card data. A browser client must use Stripe/PayPal hosted elements to tokenize card details, validate number/expiry/CVV before tokenization, and send only the returned token to this API.
+
+## Web storefront
+
+The React/Vite client in `frontend/` makes the complete customer flow available in the browser: product search, guest cart, registration/sign-in, guest-cart merging, persistent cart updates, single-page checkout, payment-result simulation, order filtering, and cancellation/refund requests. It is built and served by Nginx in the `web-app` Docker service; Nginx proxies `/api` to the backend so no browser CORS configuration is required.
 
 ## Security and reliability
 

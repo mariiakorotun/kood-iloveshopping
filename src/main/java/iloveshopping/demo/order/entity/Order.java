@@ -36,6 +36,9 @@ public class Order {
     @Column(nullable = false)
     private String customerEmail;
 
+    @Column(nullable = false)
+    private String customerPhone;
+
     @Convert(converter = EncryptedStringConverter.class)
     @Column(nullable = false, length = 2048)
     private String shippingAddress;

@@ -39,6 +39,11 @@ public class OrderController {
         return ResponseEntity.ok(orderService.filterOrders(user, status, startDate, endDate));
     }
 
+    @GetMapping("/{orderId}")
+    public ResponseEntity<OrderResponse> getOrder(@PathVariable Long orderId, @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(orderService.getOrder(orderId, user));
+    }
+
     @PostMapping("/{orderId}/cancel")
     public ResponseEntity<OrderResponse> cancelOrder(
             @PathVariable Long orderId,

@@ -5,7 +5,9 @@ import iloveshopping.demo.user.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import iloveshopping.demo.user.entity.User;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -23,6 +25,11 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserProfileResponse> profile(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(new UserProfileResponse(user.getEmail(), user.getFirstName(), user.getLastName()));
     }
 
     @PostMapping("/refresh")

@@ -29,12 +29,16 @@ services:
       SPRING_DATASOURCE_PASSWORD: kvit@psql
       GOOGLE_RECAPTCHA_SECRET: 6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_MAIL_HOST: mailpit
+      SPRING_MAIL_PORT: 1025
       DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:-replace-this-production-key}
     depends_on:
       postgres-db:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      mailpit:
+        condition: service_started
 
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
@@ -47,6 +51,23 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  web-app:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: iloveshopping-web
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend-app
+
+  mailpit:
+    image: axllent/mailpit:v1.20
+    container_name: iloveshopping-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
 volumes:
   pgdata:

@@ -9,6 +9,7 @@ public record OrderResponse(
         String status,
         BigDecimal totalAmount,
         String customerEmail,
+        String customerPhone,
         String shippingAddress,
         String shippingMethod,
         List<OrderItemResponse> items,
