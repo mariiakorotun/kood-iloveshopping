@@ -33,10 +33,20 @@ public class Order {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
-    @Column(nullable = false)
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(nullable = false, length = 2048)
     private String customerEmail;
 
-    @Column(nullable = false)
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(length = 2048)
+    private String customerFirstName;
+
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(length = 2048)
+    private String customerLastName;
+
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(length = 2048)
     private String customerPhone;
 
     @Convert(converter = EncryptedStringConverter.class)

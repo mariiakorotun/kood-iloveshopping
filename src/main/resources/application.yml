@@ -28,6 +28,11 @@ spring:
       mail.smtp.auth: false
       mail.smtp.starttls.enable: false
 
+  rabbitmq:
+    listener:
+      simple:
+        default-requeue-rejected: false
+
 jwt:
   secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
   access-expiration-ms: 900000

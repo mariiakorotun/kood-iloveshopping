@@ -24,14 +24,18 @@ public class PaymentConsumerService {
     public void processPayment(OrderCreatedEvent event) {
         // Sandbox tokens deliberately model common gateway responses. No PAN, expiry, or CVV enters this service.
         String token = event.paymentMethodToken();
-        boolean isSuccess = token != null && !token.isBlank()
-                && !token.equalsIgnoreCase("tok_insufficient_funds")
-                && !token.equalsIgnoreCase("tok_invalid_card")
-                && !token.equalsIgnoreCase("tok_expired_card")
-                && !token.equalsIgnoreCase("tok_gateway_timeout");
+        String failureReason = switch (token == null ? "" : token) {
+            case "tok_insufficient_funds" -> "Insufficient funds";
+            case "tok_invalid_card" -> "Invalid card number";
+            case "tok_expired_card" -> "Expired card";
+            case "tok_gateway_timeout" -> "Payment gateway timeout";
+            case "" -> "Missing payment token";
+            default -> null;
+        };
+        boolean isSuccess = failureReason == null;
         String trackingNumber = isSuccess ? "TRK-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase() : null;
 
-        PaymentStatusEvent statusEvent = new PaymentStatusEvent(event.orderId(), isSuccess, trackingNumber);
+        PaymentStatusEvent statusEvent = new PaymentStatusEvent(event.orderId(), isSuccess, trackingNumber, failureReason);
 
         rabbitTemplate.convertAndSend(RabbitMQConfig.ORDER_EXCHANGE, RabbitMQConfig.PAYMENT_ROUTING_KEY, statusEvent);
         log.info("Payment notification queued for order {}: {}", event.orderId(), isSuccess ? "successful" : "failed");

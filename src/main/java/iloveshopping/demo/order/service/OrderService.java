@@ -10,6 +10,9 @@ import iloveshopping.demo.order.repository.OrderRepository;
 import iloveshopping.demo.user.entity.User;
 import iloveshopping.demo.catalog.repository.ProductRepository;
 import iloveshopping.demo.notification.NotificationService;
+import iloveshopping.demo.payment.entity.PaymentTransaction;
+import iloveshopping.demo.payment.repository.PaymentTransactionRepository;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
@@ -30,6 +33,7 @@ public class OrderService {
     private final OrderMessageProducer messageProducer;
     private final ProductRepository productRepository;
     private final NotificationService notificationService;
+    private final PaymentTransactionRepository paymentTransactionRepository;
 
     @Transactional
     public OrderResponse checkout(User user, String guestSessionId, CheckoutRequest request) {
@@ -42,6 +46,8 @@ public class OrderService {
         Order order = new Order();
         order.setUser(user);
         order.setCustomerEmail(request.email());
+        order.setCustomerFirstName(request.firstName());
+        order.setCustomerLastName(request.lastName());
         order.setCustomerPhone(request.phone());
         order.setShippingAddress(String.format("%s, %s, %s", request.address(), request.city(), request.zipCode()));
         order.setShippingMethod(request.shippingOptionId());
@@ -68,6 +74,12 @@ public class OrderService {
 
         order.setTotalAmount(totalAmount);
         Order savedOrder = orderRepository.save(order);
+        PaymentTransaction transaction = new PaymentTransaction();
+        transaction.setOrder(savedOrder);
+        transaction.setAmount(savedOrder.getTotalAmount());
+        transaction.setStatus("PENDING");
+        transaction.setProviderToken(request.paymentMethodToken());
+        paymentTransactionRepository.save(transaction);
 
         cart.getItems().clear();
         cartRepository.save(cart);
@@ -97,6 +109,11 @@ public class OrderService {
             }
             order.setStatus("PAYMENT_FAILED");
         }
+        paymentTransactionRepository.findByOrderId(order.getId()).ifPresent(transaction -> {
+            transaction.setStatus(event.success() ? "SUCCESS" : "FAILURE");
+            transaction.setProviderResponse(event.success() ? "Approved" : event.failureReason());
+            transaction.setUpdatedAt(LocalDateTime.now());
+        });
         orderRepository.save(order);
         notificationService.sendPaymentUpdate(order, event.success());
     }
@@ -179,9 +196,12 @@ public class OrderService {
                 order.getStatus(),
                 order.getTotalAmount(),
                 order.getCustomerEmail(),
+                order.getCustomerFirstName(),
+                order.getCustomerLastName(),
                 order.getCustomerPhone(),
                 order.getShippingAddress(),
                 order.getShippingMethod(),
+                order.getTrackingNumber(),
                 itemResponses,
                 order.getCreatedAt()
         );
